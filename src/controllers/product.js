@@ -45,8 +45,12 @@ exports.getProduct = async (req, res) => {
 exports.addProduct = async (req, res) => {
   try {
     const { category: categoryName, ...data } = req.body;
-    
-    // code here
+
+    const newProduct = await product.create({
+      ...data,
+      image: req.files.image[0].filename,
+      idUser: req.user.id,
+    });
     const categoryData = await category.findOne({
       where: {
         name: categoryName,
@@ -94,8 +98,16 @@ exports.addProduct = async (req, res) => {
         exclude: ["createdAt", "updatedAt", "idUser"],
       },
     });
-    
-    // code here
+
+    productData = JSON.parse(JSON.stringify(productData));
+
+    res.send({
+      status: "success",
+      data: {
+        ...productData,
+        image: "http://localhost:3000/uploads/" + productData.image,
+      },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
