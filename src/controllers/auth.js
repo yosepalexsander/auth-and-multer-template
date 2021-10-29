@@ -5,6 +5,7 @@ const { user } = require("../../models");
 const Joi = require("joi");
 
 // import package here
+const bcrypt = require("bcrypt");
 
 exports.register = async (req, res) => {
   // our validation schema here
@@ -26,12 +27,29 @@ exports.register = async (req, res) => {
     });
 
   try {
-    // code here
+    // check if email already exist in database
+    const userExist = await user.findOne({
+      where: {
+        email: req.body.email,
+      },
+    });
+
+    if (userExist) {
+      return res.status(400).send({
+        status: "failed",
+        message: "email already exist",
+      });
+    }
+
+    // hashing password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     const newUser = await user.create({
       name: req.body.name,
       email: req.body.email,
       password: hashedPassword,
+      status: "user",
     });
 
     res.status(200).send({
@@ -77,7 +95,24 @@ exports.login = async (req, res) => {
         exclude: ["createdAt", "updatedAt"],
       },
     });
-    // code here
+
+    // return error bad request if user is not found
+    if (!userExist) {
+      return res.status(400).send({
+        status: "failed",
+        message: "credential is invalid",
+      });
+    }
+
+    // compare password from request with hashedpassword from database
+    const isValid = await bcrypt.compare(req.body.password, userExist.password);
+
+    if (!isValid) {
+      return res.status(400).send({
+        status: "failed",
+        message: "credential is invalid",
+      });
+    }
 
     res.status(200).send({
       status: "success...",
