@@ -43,9 +43,10 @@ exports.getProduct = async (req, res) => {
 };
 
 exports.addProduct = async (req, res) => {
+  const { idUser } = req.user;
   try {
     const { category: categoryName, ...data } = req.body;
-    const newProduct = await product.create(data);
+    const newProduct = await product.create({ ...data, idUser });
     const categoryData = await category.findOne({
       where: {
         name: categoryName,
